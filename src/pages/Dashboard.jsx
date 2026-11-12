@@ -99,7 +99,7 @@ function Dashboard() {
     spent: Number(item.spent) || 0,
   }))
 
-  // Attendance data
+  // Attendance data for each event
   const attendanceData = data.events.map(event => {
     const presentCount = data.attendance.filter(
       item =>
@@ -121,23 +121,42 @@ function Dashboard() {
     }
   })
 
-  // Sort attendance by event date (newest first)
-  const sortedAttendanceData = [...attendanceData].sort(
-    (a, b) => new Date(b.date) - new Date(a.date)
-  )
+  // Completed events only
+  const completedAttendanceData = attendanceData.filter(item => {
+    if (!item.date) return false
+
+    return getDaysUntil(item.date) < 0
+  })
+
+  // Attendance chart: completed events within the last 30 days
+  // Exclude events without attendance records
+  const recentAttendanceData = completedAttendanceData
+    .filter(item => {
+      const days = getDaysUntil(item.date)
+
+      return (
+        days >= -30 &&
+        item.present + item.absent > 0
+      )
+    })
+    .sort((a, b) => {
+      return new Date(b.date) - new Date(a.date)
+    })
 
   // Show latest 5 events or all events
   const displayedAttendanceData = showAllAttendance
-    ? sortedAttendanceData
-    : sortedAttendanceData.slice(0, 5)
+    ? recentAttendanceData
+    : recentAttendanceData.slice(0, 5)
 
-  // Attendance rate
-  const totalPresent = attendanceData.reduce(
-    (sum, item) => sum + item.present, 0
+  // Attendance rate from completed events only
+  const totalPresent = completedAttendanceData.reduce(
+    (sum, item) => sum + item.present,
+    0
   )
 
-  const totalAttendance = attendanceData.reduce(
-    (sum, item) => sum + item.present + item.absent, 0
+  const totalAttendance = completedAttendanceData.reduce(
+    (sum, item) => sum + item.present + item.absent,
+    0
   )
 
   const attendanceRate = totalAttendance > 0
@@ -146,11 +165,13 @@ function Dashboard() {
 
   // Budget summary
   const totalPlanned = budgetData.reduce(
-    (sum, item) => sum + item.planned, 0
+    (sum, item) => sum + item.planned,
+    0
   )
 
   const totalSpent = budgetData.reduce(
-    (sum, item) => sum + item.spent, 0
+    (sum, item) => sum + item.spent,
+    0
   )
 
   const budgetPercentage = totalPlanned > 0
@@ -542,7 +563,7 @@ function Dashboard() {
                 Attendance per Event
               </h2>
 
-              {attendanceData.length > 5 && (
+              {recentAttendanceData.length > 5 && (
                 <button
                   onClick={() => setShowAllAttendance(!showAllAttendance)}
                   className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
@@ -552,44 +573,50 @@ function Dashboard() {
               )}
             </div>
 
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={displayedAttendanceData}
-                margin={{ bottom: 15 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+            {displayedAttendanceData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={displayedAttendanceData}
+                  margin={{ bottom: 15 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
 
-                <XAxis
-                  dataKey="event"
-                  stroke={axisColor}
-                  tick={{ fontSize: 11 }}
-                  interval={0}
-                  angle={-15}
-                  textAnchor="end"
-                  height={65}
-                />
+                  <XAxis
+                    dataKey="event"
+                    stroke={axisColor}
+                    tick={{ fontSize: 11 }}
+                    interval={0}
+                    angle={-15}
+                    textAnchor="end"
+                    height={65}
+                  />
 
-                <YAxis stroke={axisColor} allowDecimals={false} />
+                  <YAxis stroke={axisColor} allowDecimals={false} />
 
-                <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip contentStyle={tooltipStyle} />
 
-                <Legend />
+                  <Legend />
 
-                <Bar
-                  dataKey="present"
-                  name="Present"
-                  fill="#6366f1"
-                  radius={[6, 6, 0, 0]}
-                />
+                  <Bar
+                    dataKey="present"
+                    name="Present"
+                    fill="#6366f1"
+                    radius={[6, 6, 0, 0]}
+                  />
 
-                <Bar
-                  dataKey="absent"
-                  name="Absent"
-                  fill="#f97316"
-                  radius={[6, 6, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+                  <Bar
+                    dataKey="absent"
+                    name="Absent"
+                    fill="#f97316"
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className={`flex h-[300px] items-center justify-center text-center ${mutedColor}`}>
+                No attendance records for completed events in the last 30 days.
+              </div>
+            )}
           </div>
 
           {/* Budget Chart */}
