@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { supabase } from '../services/supabase'
 import { getDashboardData } from '../services/api'
@@ -72,6 +71,7 @@ function Dashboard() {
     spent: Number(item.spent) || 0,
   }))
 
+  // Attendance data
   const attendanceData = data.events.map(event => {
     const presentCount = data.attendance.filter(
       item =>
@@ -79,9 +79,16 @@ function Dashboard() {
         item.status?.trim().toLowerCase() === 'present'
     ).length
 
+    const absentCount = data.attendance.filter(
+      item =>
+        item.event_id === event.event_id &&
+        item.status?.trim().toLowerCase() === 'absent'
+    ).length
+
     return {
       event: event.event_name,
-      attendance: presentCount,
+      present: presentCount,
+      absent: absentCount,
     }
   })
 
@@ -289,10 +296,17 @@ function Dashboard() {
                 <XAxis dataKey="event" stroke={axisColor} />
                 <YAxis stroke={axisColor} />
                 <Tooltip />
+                <Legend />
                 <Bar
-                  dataKey="attendance"
-                  name="Attendance"
+                  dataKey="present"
+                  name="Present"
                   fill="#6366f1"
+                  radius={[6, 6, 0, 0]}
+                />
+                <Bar
+                  dataKey="absent"
+                  name="Absent"
+                  fill="#f97316"
                   radius={[6, 6, 0, 0]}
                 />
               </BarChart>
