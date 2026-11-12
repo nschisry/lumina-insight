@@ -53,12 +53,15 @@ function formatDate(dateString) {
 
 function Dashboard() {
   const [darkMode, setDarkMode] = useState(false)
+  const [showAllAttendance, setShowAllAttendance] = useState(false)
+
   const [data, setData] = useState({
     members: [],
     events: [],
     attendance: [],
     budget: [],
   })
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -89,6 +92,7 @@ function Dashboard() {
     }
   }
 
+  // Budget data
   const budgetData = data.budget.map(item => ({
     category: item.category,
     planned: Number(item.planned) || 0,
@@ -111,11 +115,23 @@ function Dashboard() {
 
     return {
       event: event.event_name,
+      date: event.date,
       present: presentCount,
       absent: absentCount,
     }
   })
 
+  // Sort attendance by event date (newest first)
+  const sortedAttendanceData = [...attendanceData].sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  )
+
+  // Show latest 5 events or all events
+  const displayedAttendanceData = showAllAttendance
+    ? sortedAttendanceData
+    : sortedAttendanceData.slice(0, 5)
+
+  // Attendance rate
   const totalPresent = attendanceData.reduce(
     (sum, item) => sum + item.present, 0
   )
@@ -158,7 +174,7 @@ function Dashboard() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 5)
 
-  // Notifications
+  // Budget notifications
   const budgetAlerts = budgetData
     .filter(item =>
       item.planned > 0 && item.spent / item.planned > 0.8
@@ -168,6 +184,7 @@ function Dashboard() {
       type: 'budget',
     }))
 
+  // Upcoming event notifications
   const eventAlerts = data.events
     .filter(event => {
       if (!event.date) return false
@@ -182,6 +199,7 @@ function Dashboard() {
 
   const notifications = [...budgetAlerts, ...eventAlerts]
 
+  // Statistics
   const stats = [
     {
       title: 'Total Members',
@@ -209,6 +227,7 @@ function Dashboard() {
     },
   ]
 
+  // Theme
   const textColor = darkMode ? 'text-white' : 'text-slate-800'
   const mutedColor = darkMode ? 'text-slate-400' : 'text-slate-500'
   const cardColor = darkMode ? 'bg-slate-800' : 'bg-white'
@@ -222,6 +241,7 @@ function Dashboard() {
     color: darkMode ? '#ffffff' : '#1e293b',
   }
 
+  // Loading
   if (loading) {
     return (
       <div className={`flex min-h-screen flex-col items-center justify-center gap-3 ${
@@ -233,6 +253,7 @@ function Dashboard() {
     )
   }
 
+  // Error
   if (error) {
     return (
       <div className={`flex min-h-screen flex-col items-center justify-center gap-4 p-6 ${
@@ -516,12 +537,26 @@ function Dashboard() {
 
           {/* Attendance Chart */}
           <div className={`min-w-0 rounded-xl p-5 shadow-sm sm:p-6 ${cardColor}`}>
-            <h2 className={`mb-6 text-lg font-semibold ${textColor}`}>
-              Attendance per Event
-            </h2>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <h2 className={`text-lg font-semibold ${textColor}`}>
+                Attendance per Event
+              </h2>
+
+              {attendanceData.length > 5 && (
+                <button
+                  onClick={() => setShowAllAttendance(!showAllAttendance)}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                >
+                  {showAllAttendance ? 'Show Less' : 'View All'}
+                </button>
+              )}
+            </div>
 
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={attendanceData} margin={{ bottom: 15 }}>
+              <BarChart
+                data={displayedAttendanceData}
+                margin={{ bottom: 15 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
 
                 <XAxis
