@@ -1,7 +1,9 @@
 
 import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './services/supabase'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 
 function App() {
@@ -25,7 +27,28 @@ function App() {
 
   if (loading) return <p>Loading...</p>
 
-  return session ? <Dashboard /> : <Login />
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={session ? <Dashboard /> : <Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/login"
+          element={session ? <Navigate to="/" replace /> : <Login />}
+        />
+
+        <Route
+          path="/register"
+          element={session ? <Navigate to="/" replace /> : <Register />}
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
 
 export default App

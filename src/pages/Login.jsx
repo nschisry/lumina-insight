@@ -113,6 +113,16 @@ function Login() {
 
         </form>
 
+        <p className="mt-6 text-center text-sm text-slate-500">
+          Don't have an account?{' '}
+          <a
+            href="/register"
+            className="font-semibold text-indigo-600 hover:text-indigo-700"
+          >
+            Sign Up
+          </a>
+        </p>
+
         <p className="mt-6 text-center text-xs text-slate-400">
           Lumina Insight © 2026
         </p>
